@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Economist Articles Viewer</title>
+		<meta charset="UTF-8">
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/react/17.0.2/umd/react.production.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/17.0.2/umd/react-dom.production.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.26.0/babel.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+		<script type="text/javascript" src="/static/js/dictionary.js" defer></script>
+    <style>
+/* 기본 레이아웃 */
+		body {
+			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+			margin: 0;
+			padding: 20px;
+			background: #f5f5f5;
+		}
+
+		.header {
+			text-align: center;
+			padding: 20px;
+			background: #e3120b;
+			color: white;
+			margin-bottom: 20px;
+			position: sticky;
+			top: 0;
+			z-index: 100;
+		}
+
+		.article-container {
+			display: grid;
+			grid-template-columns: 300px 1fr;
+			gap: 20px;
+			max-width: 1800px;
+			margin: 0 auto;
+			height: calc(100vh - 100px);
+		}
+
+		/* 기사 목록 스타일 */
+		.articles-list {
+			background: white;
+			padding: 20px;
+			border-radius: 8px;
+			box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+			overflow-y: auto;
+		}
+
+		.article-card {
+			padding: 15px;
+			border-bottom: 1px solid #eee;
+			cursor: pointer;
+			transition-property: background;
+			transition-duration: 0.3s;
+			transition-timing-function: ease;
+			display: flex;
+			justify-content: space-between;
+			align-items: flex-start;
+		}
+
+		.article-content {
+			flex: 1;
+			padding-right: 10px;
+		}
+
+		.article-title {
+			font-weight: bold;
+			margin-bottom: 10px;
+		}
+
+		/* 버튼 스타일 */
+		.bookmark-btn {
+			background: none;
+			border: 1px solid #e3120b;
+			border-radius: 4px;
+			color: #e3120b;
+			cursor: pointer;
+			padding: 5px 10px;
+			display: flex;
+			align-items: center;
+			gap: 5px;
+		}
+
+		/* 탭 메뉴 */
+		.view-mode {
+			display: flex;
+			gap: 10px;
+			padding-bottom: 15px;
+			border-bottom: 1px solid #eee;
+			margin-bottom: 15px;
+		}
+
+		.view-mode button {
+			background: none;
+			border: none;
+			padding: 5px 10px;
+			cursor: pointer;
+			color: #666;
+		}
+
+		.view-mode button.active {
+			color: #e3120b;
+			font-weight: bold;
+		}
+
+		/* 프레임 컨테이너 */
+		.article-frame-container {
+			background: white;
+			border-radius: 8px;
+			box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+			overflow: hidden;
+			height: 100%;
+		}
+
+		.article-frame {
+			width: 100%;
+			height: 100%;
+			border: none;
+		}
+
+		/* 플래시카드 스타일 */
+		.study-container {
+			height: 100%;
+			display: flex;
+			flex-direction: column;
+		}
+
+		.flash-card {
+			height: calc(100vh - 120px);
+			width: 100%;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			background-color: #f9fafb;
+		}
+
+		.card-container {
+			perspective: 1000px;
+			width: 500px;
+			height: 300px;
+			position: relative;
+			transform-style: preserve-3d;
+			transform: translateY(-40px) translateX(-20px);
+			transition: transform 0.8s;
+		}
+
+		.card-container.flipped {
+			transform: translateY(-40px) translateX(20px) rotateY(180deg);
+		}
+
+		.card-face {
+			position: absolute;
+			width: 100%;
+			height: 100%;
+			backface-visibility: hidden;
+			background: white;
+			border-radius: 12px;
+			box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			padding: 20px;
+			font-size: 2rem;
+		}
+
+		.card-face:last-child {
+			transform: rotateY(180deg);
+		}
+		.card-counter {
+			position: absolute;
+			top: -100px;  /* Y축 위치 조정 */
+			left: -20px; /* X축 위치 조정 - 카드와 동일하게 */
+			font-size: 1.2rem;
+			color: #666;
+		}
+
+		/* 컨트롤 버튼 */
+		.button-group {
+			display: flex;
+			gap: 1rem;
+			margin-top: 2rem;
+		}
+
+		.control-button {
+			padding: 0.5rem 1.5rem;
+			background: white;
+			border: 1px solid #e5e7eb;
+			border-radius: 0.5rem;
+			cursor: pointer;
+		}
+
+		.control-button:hover {
+			background-color: #f9fafb;
+		}
+		body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .header {
+            text-align: center;
+            padding: 20px;
+            background: #e3120b;
+            color: white;
+            margin-bottom: 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .article-container {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+            max-width: 1800px;
+            margin: 0 auto;
+            height: calc(100vh - 100px);
+        }
+        .articles-list {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow-y: auto;
+        }
+        .article-card {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background 0.3s;
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+        }
+        .article-card:hover {
+            background: #f9f9f9;
+        }
+        .article-card.active {
+            background: #e3120b10;
+        }
+        .article-content {
+            flex: 1;
+            padding-right: 10px;
+        }
+        .article-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .article-date {
+            font-size: 0.9em;
+            color: #666;
+        }
+        .bookmark-btn {
+            background: none;
+            border: 1px solid #e3120b;
+            border-radius: 4px;
+            color: #e3120b;
+            cursor: pointer;
+            padding: 5px 10px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.9em;
+        }
+        .bookmark-btn:hover {
+            background: #e3120b10;
+        }
+        .bookmark-btn.active {
+            background: #e3120b;
+            color: white;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        .article-frame-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: hidden;
+            height: 100%;
+        }
+        .article-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        .view-mode {
+            display: flex;
+            gap: 10px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 15px;
+        }
+        .view-mode button {
+            background: none;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            color: #666;
+            font-size: 0.9em;
+        }
+        .view-mode button.active {
+            color: #e3120b;
+            font-weight: bold;
+        }
+        .word-definition {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+        .article-card .fa-trash {
+            color: #dc2626;
+        }
+        .error {
+            text-align: center;
+            padding: 20px;
+            color: #dc2626;
+        }
+		.perspective-1000 {
+			perspective: 1000px;
+		}
+		.backface-hidden {
+			backface-visibility: hidden;
+		}
+		.rotate-y-180 {
+			transform: rotateY(180deg);
+		}
+		.-rotate-y-180 {
+			transform: rotateY(-180deg);
+		}
+		.transform-gpu {
+			transform: translate3d(0, 0, 0);
+		}
+		.study-container {
+			height: 100%;
+			display: flex;
+			flex-direction: column;
+		}
+
+		
+    </style>
+</head>
+<body>
+    <div id="dictionary-root"></div>
+    <div class="header">
+        <h1>The Economist 최신 기사</h1>
+    </div>
+    <div class="article-container">
+        <div class="articles-list" id="articles">
+            <div class="view-mode">
+                <button onclick="switchView('all')" class="active">전체 기사</button>
+                <button onclick="switchView('bookmarks')">즐겨찾기</button>
+                <button onclick="switchView('dictionary')">단어장</button>
+            </div>
+            <div class="loading">기사를 불러오는 중...</div>
+        </div>
+        <div class="article-frame-container">
+            <iframe id="article-frame" class="article-frame"></iframe>
+        </div>
+    </div>
+	<script>
+		const FlashCard = function(props) {
+		const [isFlipped, setIsFlipped] = React.useState(false);
+		
+		return React.createElement('div', { className: 'flash-card' }, [
+			React.createElement('div', { 
+				className: 'card-counter',
+				style: {
+					marginBottom: '1rem',
+					fontSize: '1.2rem',
+					color: '#666'
+				}
+			}, 
+				`${props.currentIndex + 1} / ${props.total}`
+			),
+			
+			// 카드 컨테이너 - 크기 조정
+			React.createElement('div', {
+				className: `card-container ${isFlipped ? 'flipped' : ''}`,
+				onClick: () => setIsFlipped(!isFlipped),
+				style: {
+					width: '300px',  // 버튼 크기에 맞춰 조정
+					height: '200px', // 비율 유지하며 조정
+					margin: '0 auto'
+				}
+			}, [
+				// 앞면 (단어)
+				React.createElement('div', {
+					className: 'card-face',
+					style: {
+						fontSize: '1.5rem'  // 글자 크기 조정
+					}
+				}, props.word),
+				
+				// 뒷면 (의미)
+				React.createElement('div', {
+					className: 'card-face',
+					style: {
+						fontSize: '1.2rem'  // 글자 크기 조정
+					}
+				}, props.definition)
+			]),
+			
+			// 버튼 그룹 - 뒤집기 버튼 제거
+			React.createElement('div', { 
+				className: 'button-group',
+				style: {
+					marginTop: '2rem',
+					display: 'flex',
+					gap: '1rem',
+					justifyContent: 'center'
+				}
+			}, [
+				React.createElement('button', {
+					onClick: (e) => {
+						e.stopPropagation();
+						props.onPrev();
+					},
+					className: 'control-button'
+				}, '이전'),
+				React.createElement('button', {
+					onClick: (e) => {
+						e.stopPropagation();
+						props.onNext();
+					},
+					className: 'control-button'
+				}, '다음')
+			])
+		]);
+	};
+
+	const DictionaryStudy = function(props) {
+		const [currentIndex, setCurrentIndex] = React.useState(0);
+		const [mode, setMode] = React.useState('sequential');
+		const words = props.words || [];
+
+		const handleNext = () => {
+			if (mode === 'sequential') {
+				setCurrentIndex((prev) => (prev + 1) % words.length);
+			} else {
+				setCurrentIndex(Math.floor(Math.random() * words.length));
+			}
+		};
+
+		const handlePrev = () => {
+			if (mode === 'sequential') {
+				setCurrentIndex((prev) => (prev - 1 + words.length) % words.length);
+			} else {
+				setCurrentIndex(Math.floor(Math.random() * words.length));
+			}
+		};
+
+		if (words.length === 0) {
+			return React.createElement('div', { className: 'empty-state' },
+				React.createElement('p', null, '저장된 단어가 없습니다.')
+			);
+		}
+
+		const currentWord = words[currentIndex];
+
+		return React.createElement('div', { 
+			className: 'study-container',
+			style: {
+				height: '100%',
+				display: 'flex',
+				flexDirection: 'column',
+				alignItems: 'center',
+				justifyContent: 'center',
+				backgroundColor: '#f9fafb',
+				position: 'relative',
+				padding: '2rem'
+			}
+		}, [
+			React.createElement('div', { 
+				style: {
+					position: 'absolute',
+					top: '1rem',
+					right: '1rem',
+					display: 'flex',
+					gap: '0.5rem'
+				}
+			}, [
+				React.createElement('button', {
+					onClick: () => setMode('sequential'),
+					style: {
+						padding: '0.5rem 1rem',
+						backgroundColor: mode === 'sequential' ? '#e3120b' : '#fff',
+						color: mode === 'sequential' ? '#fff' : '#666',
+						border: '1px solid #e3120b',
+						borderRadius: '4px',
+						cursor: 'pointer'
+					}
+				}, '순차 학습'),
+				React.createElement('button', {
+					onClick: () => setMode('random'),
+					style: {
+						padding: '0.5rem 1rem',
+						backgroundColor: mode === 'random' ? '#e3120b' : '#fff',
+						color: mode === 'random' ? '#fff' : '#666',
+						border: '1px solid #e3120b',
+						borderRadius: '4px',
+						cursor: 'pointer'
+					}
+				}, '랜덤 학습')
+			]),
+			React.createElement(FlashCard, {
+				word: currentWord.word,
+				definition: currentWord.definition,
+				onNext: handleNext,
+				onPrev: handlePrev,
+				currentIndex: currentIndex,
+				total: words.length
+			})
+		]);
+	};
+		</script>
+		
+
+    <script>
+		
+        let currentView = 'all';
+        let bookmarks = [];
+        let allArticles = [];
+        let savedWords = [];
+
+        async function fetchSavedWords() {
+            try {
+                const response = await fetch('/api/dictionary');
+                if (response.ok) {
+                    savedWords = await response.json();
+                }
+            } catch (error) {
+                console.error('Error fetching saved words:', error);
+            }
+        }
+
+        async function fetchBookmarks() {
+            try {
+                const response = await fetch('/api/bookmarks');
+                bookmarks = await response.json();
+            } catch (error) {
+                console.error('Error fetching bookmarks:', error);
+            }
+        }
+
+        function createArticleElement(article, index) {
+            const isBookmarked = bookmarks.some(b => b.url === article.url);
+            
+            const articleElement = document.createElement('div');
+            articleElement.className = 'article-card';
+            if (index === 0) articleElement.classList.add('active');
+            
+            const safeArticle = {
+                url: article.url,
+                title: article.title,
+                date: article.date,
+                saved_path: article.saved_path
+            };
+            
+            articleElement.innerHTML = `
+                <div class="article-content">
+                    <div class="article-title">${article.title}</div>
+                    <div class="article-date">${new Date(article.date).toLocaleDateString()}</div>
+                </div>
+                <button class="bookmark-btn ${isBookmarked ? 'active' : ''}" 
+                        data-article='${JSON.stringify(safeArticle).replace(/'/g, "&#39;")}'>
+                    <i class="fas ${isBookmarked ? 'fa-bookmark' : 'fa-bookmark-o'}"></i>
+                    ${isBookmarked ? '저장됨' : '저장'}
+                </button>
+            `;
+            
+            const bookmarkBtn = articleElement.querySelector('.bookmark-btn');
+            bookmarkBtn.addEventListener('click', (event) => {
+                event.stopPropagation();
+                const articleData = JSON.parse(bookmarkBtn.dataset.article);
+                toggleBookmark(articleData, event);
+            });
+            
+            articleElement.addEventListener('click', () => {
+                document.querySelectorAll('.article-card').forEach(card => {
+                    card.classList.remove('active');
+                });
+                articleElement.classList.add('active');
+                
+                if (article.saved_path) {
+                    document.getElementById('article-frame').src = article.saved_path;
+                } else {
+                    const articlePath = article.url.replace('https://www.economist.com/', '');
+                    document.getElementById('article-frame').src = `/proxy/${articlePath}`;
+                }
+            });
+            
+            return articleElement;
+        }
+
+		function createWordElement(word) {
+			const wordElement = document.createElement('div');
+			wordElement.className = 'article-card';
+			
+			wordElement.innerHTML = `
+				<div class="article-content">
+					<div class="article-title">${word.word}</div>
+					<div class="word-definition">${word.definition}</div>
+				</div>
+				<button class="bookmark-btn" onclick="deleteWord('${word.id}')">
+					<i class="fas fa-trash"></i>
+					삭제
+				</button>
+			`;
+			
+			return wordElement;
+		}
+
+        async function deleteWord(wordId) {
+            try {
+                const response = await fetch(`/api/dictionary/${wordId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    savedWords = savedWords.filter(w => w.id !== wordId);
+                    displayContent('dictionary');
+                }
+            } catch (error) {
+                console.error('Error deleting word:', error);
+                alert('단어 삭제 중 오류가 발생했습니다.');
+            }
+        }
+
+        async function toggleBookmark(article, event) {
+            const isBookmarked = bookmarks.some(b => b.url === article.url);
+            
+            try {
+                if (isBookmarked) {
+                    const bookmark = bookmarks.find(b => b.url === article.url);
+                    const response = await fetch(`/api/bookmarks/${bookmark.id}`, { 
+                        method: 'DELETE'
+                    });
+                    if (response.ok) {
+                        bookmarks = bookmarks.filter(b => b.url !== article.url);
+                    } else {
+                        throw new Error('북마크 삭제 실패');
+                    }
+                } else {
+                    const response = await fetch('/api/bookmarks', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(article)
+                    });
+                    if (response.ok) {
+                        const newBookmark = await response.json();
+                        bookmarks.push(newBookmark);
+                    } else {
+                        throw new Error('북마크 추가 실패');
+                    }
+                }
+                
+                displayContent(currentView);
+            } catch (error) {
+                console.error('Error toggling bookmark:', error);
+                alert('북마크 처리 중 오류가 발생했습니다.');
+            }
+        }
+
+        async function displayContent(view) {
+			const container = document.getElementById('articles');
+			const contentDiv = document.createElement('div');
+			const frameContainer = document.querySelector('.article-frame-container');
+			
+			// 뷰 모드 버튼 추가
+			const viewMode = document.createElement('div');
+			viewMode.className = 'view-mode';
+			viewMode.innerHTML = `
+				<button onclick="switchView('all')" class="${view === 'all' ? 'active' : ''}">전체 기사</button>
+				<button onclick="switchView('bookmarks')" class="${view === 'bookmarks' ? 'active' : ''}">즐겨찾기</button>
+				<button onclick="switchView('dictionary')" class="${view === 'dictionary' ? 'active' : ''}">단어장</button>
+			`;
+			contentDiv.appendChild(viewMode);
+			
+			if (view === 'dictionary') {
+				// 왼쪽 단어 목록
+				if (savedWords.length === 0) {
+					const emptyMessage = document.createElement('div');
+					emptyMessage.className = 'loading';
+					emptyMessage.textContent = '저장된 단어가 없습니다.';
+					contentDiv.appendChild(emptyMessage);
+				} else {
+					savedWords.forEach(word => {
+						contentDiv.appendChild(createWordElement(word));
+					});
+				}
+				
+				// 오른쪽 플래시카드 표시
+				frameContainer.innerHTML = '<div id="dictionary-study"></div>';
+				
+				// React 컴포넌트 마운트
+				ReactDOM.render(
+					React.createElement(DictionaryStudy, { words: savedWords }),
+					document.getElementById('dictionary-study')
+				);
+			} else {
+				// iframe 복원
+				frameContainer.innerHTML = '<iframe id="article-frame" class="article-frame"></iframe>';
+				
+				const articles = view === 'all' ? allArticles : bookmarks;
+				
+				if (articles.length === 0) {
+					const emptyMessage = document.createElement('div');
+					emptyMessage.className = 'loading';
+					emptyMessage.textContent = view === 'all' ? '기사가 없습니다.' : '저장된 기사가 없습니다.';
+					contentDiv.appendChild(emptyMessage);
+				} else {
+					articles.forEach((article, index) => {
+						contentDiv.appendChild(createArticleElement(article, index));
+					});
+					
+					if (articles.length > 0) {
+						const articlePath = articles[0].url.replace('https://www.economist.com/', '');
+						document.getElementById('article-frame').src = `/proxy/${articlePath}`;
+					}
+				}
+			}
+			
+			container.innerHTML = '';
+			container.appendChild(contentDiv);
+		}
+
+        async function fetchArticles() {
+            try {
+                await fetchBookmarks();
+                
+                const response = await fetch('/api/articles');
+                allArticles = await response.json();
+                
+                displayContent(currentView);
+            } catch (error) {
+                const articlesContainer = document.getElementById('articles');
+                articlesContainer.innerHTML = '<div class="error">기사를 불러오는 중 문제가 발생했습니다.</div>';
+                console.error('Error:', error);
+            }
+        }
+
+        async function switchView(view) {
+            currentView = view;
+            
+            if (view === 'dictionary' && savedWords.length === 0) {
+                await fetchSavedWords();
+            }
+            
+            displayContent(view);
+        }
+
+        fetchArticles();
+    </script>
+</body>
+</html>
